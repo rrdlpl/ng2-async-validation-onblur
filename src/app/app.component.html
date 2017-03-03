@@ -1,0 +1,10 @@
+<h1>
+  {{title}}
+  <form [formGroup]="form">
+        <input type="text" formControlName="test" validate-onblur/>
+        <div *ngIf="!form.controls.test.valid && form.controls.test.touched">          
+          <small *ngIf="form.controls.test.hasError('required')">required</small>
+          <small *ngIf="form.controls.test.hasError('duplicated')">duplicated</small>
+        </div>
+  </form>
+</h1>

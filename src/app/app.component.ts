@@ -21,6 +21,5 @@ export class AppComponent {
     this.form = this.fb.group({
       test : ['', Validators.required, duplicatedAsync(http).bind(this)]
     });
-
   }
 }

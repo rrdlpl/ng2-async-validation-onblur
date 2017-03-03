@@ -1,27 +1,71 @@
-# Mytest
+This a demo project in angular 2 to make async validations of inputs when the focus is lost.
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.0.0-rc.0.
+# Validate only on blur directive
+```
+import { NgControl } from '@angular/forms';
+import { Directive } from '@angular/core';
 
-## Development server
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+@Directive({
+    selector: '[validate-onblur]',
+    host: {
+        '(focus)': 'onFocus($event)',
+        '(blur)': 'onBlur($event)',
+        '(keyup)': 'onKeyup($event)',
+        '(change)': 'onChange($event)',
+        '(ngModelChange)': 'onNgModelChange($event)'
+    }
+})
+export class ValidationOnBlurDirective {
+    private validators: any;
+    private asyncValidators: any;
+    private wasChanged: any;
+    constructor(public formControl: NgControl) {
+    }
+    onFocus($event) {
+        this.wasChanged = false;
+        this.validators = this.formControl.control.validator;
+        this.asyncValidators = this.formControl.control.asyncValidator;
+        this.formControl.control.clearAsyncValidators();
+        this.formControl.control.clearValidators();
+    }
+    onKeyup($event) {
+        this.wasChanged = true; // keyboard change
+    }
+    onChange($event) {
+        this.wasChanged = true; // copypaste change
+    }
+    onNgModelChange($event) {
+        this.wasChanged = true; // ng-value change
+    }
+    onBlur($event) {
+        this.formControl.control.setAsyncValidators(this.asyncValidators);
+        this.formControl.control.setValidators(this.validators);
+        if (this.wasChanged)
+            this.formControl.control.updateValueAndValidity();
+    }
+}
+```
 
-## Code scaffolding
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive/pipe/service/class/module`.
+###The async validator that calls a rest service
+```
+export const duplicatedAsync = (http: Http): AsyncValidatorFn => {
+    let subscribe: boolean = false;
+    return (control: AbstractControl): { [key: string]: any } => {
+        return new Promise(resolve => {
+            let d: boolean;
+            http.get("/").toPromise().then(resp => {
+                d = true;                
+                if(control.value === "dupped"){                    
+                    
+                    resolve({"duplicated": true});
+                } else {
+                    control.setErrors(null);;
+                    resolve(null);
+                }                
+            });
+        });
 
-## Build
-
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-Before running the tests make sure you are serving the app via `ng serve`.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+    };
+};
+```
